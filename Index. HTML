@@ -1,173 +1,838 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="gu">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>સ્ટુડેન્ટ સાથી - AI નોંધ સરળ કરનાર</title>
+    <title>Student AI Companion - તમારો અભ્યાસ મિત્ર</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .header { background: #4f46e5; color: white; padding: 30px; text-align: center; }
-        .header h1 { font-size: 2rem; margin-bottom: 10px; }
-        .main-content { padding: 20px; }
-        textarea { width: 100%; height: 120px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; margin: 10px 0; }
-        .button-group { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
-        button { padding: 12px 20px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-        .simplify-btn { background: #10b981; color: white; }
-        .mcq-btn { background: #f59e0b; color: white; }
-        .output-box { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 15px; min-height: 150px; margin-top: 15px; }
-        .loading { display: none; text-align: center; padding: 15px; color: #4f46e5; }
-        .api-key-section { background: #f1f5f9; padding: 15px; border-radius: 10px; margin: 15px 0; }
-        .api-key-section input { width: 100%; padding: 10px; border: 2px solid #cbd5e1; border-radius: 5px; margin-top: 8px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --shadow-light: 0 8px 32px rgba(31, 38, 135, 0.37);
+            --border-radius: 20px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+
+        .shape:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 1s ease;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-light);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            animation: fadeInUp 1s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(31, 38, 135, 0.5);
+        }
+
+        .tab-container {
+            display: flex;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 5px;
+            margin-bottom: 2rem;
+            gap: 5px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            background: transparent;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--text-primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .upload-area {
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+            border-radius: var(--border-radius);
+            padding: 3rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtext {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .subject-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+        }
+
+        .subject-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(31, 38, 135, 0.4);
+        }
+
+        .subject-card.selected {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #4facfe;
+        }
+
+        .subject-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #4facfe;
+        }
+
+        .subject-name {
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .textarea-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-primary);
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-gradient);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+        }
+
+        .btn-warning {
+            background: var(--warning-gradient);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .result-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-top: 2rem;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-light);
+            display: none;
+        }
+
+        .result-container.show {
+            display: block;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mcq-container {
+            margin-top: 1rem;
+        }
+
+        .mcq-question {
+            background: rgba(79, 172, 254, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #4facfe;
+        }
+
+        .mcq-options {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .mcq-options li {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .mcq-options li:hover {
+            background: rgba(79, 172, 254, 0.1);
+        }
+
+        .mcq-options li.correct {
+            background: rgba(67, 233, 123, 0.2);
+            border-left: 3px solid #43e97b;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: white;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .tab-container {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .subject-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success-gradient);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success-gradient);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
     </style>
 </head>
 <body>
+    <div class="animated-bg"></div>
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
     <div class="container">
         <div class="header">
-            <h1>📚 સ્ટુડેન્ટ સાથી</h1>
-            <p>AI પાવરથી તમારી નોંધો સરળ બનાવો</p>
+            <h1><i class="fas fa-robot"></i> Student AI Companion</h1>
+            <p class="subtitle">તમારો સ્માર્ટ અભ્યાસ મિત્ર - ફોટો, PDF અને ટેક્સ્ટથી શીખો!</p>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-number" id="filesProcessed">0</div>
+                    <div class="stat-label">Files Processed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="questionsGenerated">0</div>
+                    <div class="stat-label">MCQs Generated</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="explanationsGiven">0</div>
+                    <div class="stat-label">Explanations Given</div>
+                </div>
+            </div>
         </div>
 
-        <div class="main-content">
-            <div class="input-section">
-                <h3>તમારી નોંધો અહીં પેસ્ટ કરો:</h3>
-                <textarea id="notesInput" placeholder="ઉદાહરણ: પ્રકાશ સંશ્લેષણ એ પ્રક્રિયા છે જેમાં છોડ સૂર્યપ્રકાશની ઊર્જાનો ઉપયોગ કરે છે..."></textarea>
-                
-                <div class="button-group">
-                    <button class="simplify-btn" onclick="simplifyNotes()">🎯 નોંધો સરળ કરો</button>
-                    <button class="mcq-btn" onclick="generateMCQs()">❓ MCQ પ્રશ્નો બનાવો</button>
+        <div class="glass-card">
+            <div class="tab-container">
+                <button class="tab-btn active" onclick="switchTab('upload')">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload Content
+                </button>
+                <button class="tab-btn" onclick="switchTab('type')">
+                    <i class="fas fa-keyboard"></i> Type/Paste Text
+                </button>
+                <button class="tab-btn" onclick="switchTab('subject')">
+                    <i class="fas fa-book"></i> Select Subject
+                </button>
+            </div>
+
+            <!-- Upload Tab -->
+            <div id="uploadTab" class="tab-content active">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()" 
+                     ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">ફાઇલ અપલોડ કરો</div>
+                    <div class="upload-subtext">PDF, JPG, PNG - ખેંચો અને છોડો અથવા ક્લિક કરો</div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(event)">
+            </div>
+
+            <!-- Type Tab -->
+            <div id="typeTab" class="tab-content">
+                <div class="textarea-container">
+                    <textarea id="textContent" class="textarea" placeholder="અહીં તમારો text લખો અથવા paste કરો... કોઈપણ વિષય, પ્રશ્ન અથવા topic જે તમને સમજાવવું છે!
+
+ઉદાહરણ:
+- ફોટોસિંથેસિસ શું છે?
+- પાયથાગોરસ પ્રમેય સમજાવો
+- ભારતનો સ્વતંત્રતા સંગ્રામ
+- પ્રકાશ અને ધ્વનિના ગુણધર્મો"></textarea>
                 </div>
             </div>
 
-            <div class="api-key-section">
-                <h3>🔑 તમારો OpenAI API Key:</h3>
-                <input type="password" id="apiKey" placeholder="sk-... (https://platform.openai.com/api-keys પરથી મેળવો)">
-            </div>
-
-            <div class="loading" id="loading">
-                <h3>⚡ AI કામ કરી રહ્યું છે...</h3>
-            </div>
-
-            <div class="output-section">
-                <h3>📋 પરિણામ:</h3>
-                <div class="output-box" id="output">
-                    તમારી સરળ નોંધો અથવા MCQ પ્રશ્નો અહીં દેખાશે...
+            <!-- Subject Tab -->
+            <div id="subjectTab" class="tab-content">
+                <div class="subject-grid">
+                    <div class="subject-card" onclick="selectSubject('mathematics')">
+                        <div class="subject-icon"><i class="fas fa-calculator"></i></div>
+                        <div class="subject-name">ગણિત</div>
+                    </div>
+                    <div class="subject-card" onclick="selectSubject('science')">
+                        <div class="subject-icon"><i class="fas fa-atom"></i></div>
+                        <div class="subject-name">વિજ્ઞાન</div>
+                    </div>
+                    <div class="subject-card" onclick="selectSubject('history')">
+                        <div class="subject-icon"><i class="fas fa-landmark"></i></div>
+                        <div class="subject-name">ઇતિહાસ</div>
+                    </div>
+                    <div class="subject-card" onclick="selectSubject('geography')">
+                        <div class="subject-icon"><i class="fas fa-globe"></i></div>
+                        <div class="subject-name">ભૂગોળ</div>
+                    </div>
+                    <div class="subject-card" onclick="selectSubject('english')">
+                        <div class="subject-icon"><i class="fas fa-language"></i></div>
+                        <div class="subject-name">અંગ્રેજી</div>
+                    </div>
+                    <div class="subject-card" onclick="selectSubject('gujarati')">
+                        <div class="subject-icon"><i class="fas fa-pen-fancy"></i></div>
+                        <div class="subject-name">ગુજરાતી</div>
+                    </div>
+                    <div class="subject-card" onclick="selectSubject('computer')">
+                        <div class="subject-icon"><i class="fas fa-laptop-code"></i></div>
+                        <div class="subject-name">કમ્પ્યુટર</div>
+                    </div>
+                    <div class="subject-card" onclick="selectSubject('arts')">
+                        <div class="subject-icon"><i class="fas fa-palette"></i></div>
+                        <div class="subject-name">કલા</div>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="action-buttons">
+                <button class="btn btn-success" onclick="explainContent()">
+                    <i class="fas fa-lightbulb"></i> સમજાવો (Explain)
+                </button>
+                <button class="btn btn-secondary" onclick="generateMCQ()">
+                    <i class="fas fa-question-circle"></i> MCQ બનાવો
+                </button>
+                <button class="btn btn-warning" onclick="summarizeContent()">
+                    <i class="fas fa-file-alt"></i> સારાંશ આપો
+                </button>
+                <button class="btn" onclick="translateContent()">
+                    <i class="fas fa-language"></i> ભાષાંતર કરો
+                </button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>AI તમારા માટે કામ કરી રહ્યું છે... કૃપા કરીને રાહ જુઓ</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-title" id="resultTitle">
+                <i class="fas fa-check-circle"></i> પરિણામ
+            </div>
+            <div id="resultContent"></div>
         </div>
     </div>
 
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i> <span id="toastMessage">Success!</span>
+    </div>
+
     <script>
-        async function simplifyNotes() {
-            const notes = document.getElementById('notesInput').value;
-            const apiKey = document.getElementById('apiKey').value;
-            const output = document.getElementById('output');
-            const loading = document.getElementById('loading');
+        let currentContent = '';
+        let selectedSubject = '';
+        let filesProcessed = 0;
+        let questionsGenerated = 0;
+        let explanationsGiven = 0;
 
-            if (!notes) {
-                output.innerHTML = "❌ કૃપા કરીને પહેલા નોંધો દાખલ કરો!";
-                return;
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved stats
+            loadStats();
+            
+            // Add sample content for demo
+            if (!currentContent) {
+                currentContent = `ફોટોસિંથેસિસ એ એક જૈવિક પ્રક્રિયા છે જેમાં છોડ સૂર્યપ્રકાશ, કાર્બન ડાયોક્સાઇડ અને પાણીનો ઉપયોગ કરીને ખોરાક બનાવે છે.
+
+મુખ્ય બાબતો:
+• સૂર્યપ્રકાશ + CO2 + H2O → ગ્લુકોઝ + O2
+• ક્લોરોફિલ આવશ્યક છે
+• ઓક્સિજન ઉત્પન્ન થાય છે
+• છોડનું મુખ્ય ખોરાક બનાવવાની પ્રક્રિયા`;
             }
+        });
 
-            if (!apiKey) {
-                output.innerHTML = "❌ કૃપા કરીને API Key દાખલ કરો!";
-                return;
-            }
+        // Tab switching
+        function switchTab(tabName) {
+            // Remove active from all tabs and contents
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active to selected tab
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
 
-            loading.style.display = 'block';
-            output.innerHTML = '';
-
-            try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-3.5-turbo",
-                        messages: [
-                            {
-                                role: "system",
-                                content: "તમે એક અનુભવી શિક્ષક છો જે જટિલ વિષયોને સરળ હિન્દીમાં સમજાવે છે."
-                            },
-                            {
-                                role: "user",
-                                content: `નીચેની ટેક્સ્ટને સરળ હિન્દીમાં સમજાવો:\n\n${notes}`
-                            }
-                        ],
-                        max_tokens: 1000
-                    })
-                });
-
-                const data = await response.json();
-                if (data.error) {
-                    output.innerHTML = `❌ ત્રુટિ: ${data.error.message}`;
-                } else {
-                    output.innerHTML = data.choices[0].message.content;
-                }
-            } catch (error) {
-                output.innerHTML = `❌ નેટવર્ક ત્રુટિ: ${error.message}`;
-            } finally {
-                loading.style.display = 'none';
+        // File handling
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file);
             }
         }
 
-        async function generateMCQs() {
-            const notes = document.getElementById('notesInput').value;
-            const apiKey = document.getElementById('apiKey').value;
-            const output = document.getElementById('output');
-            const loading = document.getElementById('loading');
-
-            if (!notes) {
-                output.innerHTML = "❌ કૃપા કરીને પહેલા નોંધો દાખલ કરો!";
-                return;
-            }
-
-            if (!apiKey) {
-                output.innerHTML = "❌ કૃપા કરીને API Key દાખલ કરો!";
-                return;
-            }
-
-            loading.style.display = 'block';
-            output.innerHTML = '';
-
-            try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-3.5-turbo",
-                        messages: [
-                            {
-                                role: "system",
-                                content: "તમે પરીક્ષા નિષ્ણાત છો જે ઉચ્ચ-ગુણવત્તાના MCQ પ્રશ્નો બનાવે છે."
-                            },
-                            {
-                                role: "user",
-                                content: `નીચેની ટેક્સ્ટમાંથી 3 MCQ પ્રશ્નો બનાવો:\n\n${notes}`
-                            }
-                        ],
-                        max_tokens: 1500
-                    })
-                });
-
-                const data = await response.json();
-                if (data.error) {
-                    output.innerHTML = `❌ ત્રુટિ: ${data.error.message}`;
-                } else {
-                    output.innerHTML = data.choices[0].message.content;
-                }
-            } catch (error) {
-                output.innerHTML = `❌ નેટવર્ક ત્રુટિ: ${error.message}`;
-            } finally {
-                loading.style.display = 'none';
+        function handleFileDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const uploadArea = event.target.closest('.upload-area');
+            uploadArea.classList.remove('dragover');
+            
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                processFile(file);
             }
         }
-    </script>
-</body>
-</html>
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.target.closest('.upload-area').classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.target.closest('.upload-area').classList.remove('dragover');
+        }
+
+        // Process uploaded file
+        function processFile(file) {
+            showLoading();
+            
+            if (file.type === 'application/pdf') {
+                processPDF(file);
+            } else if (file.type.startsWith('image/')) {
+                processImage(file);
+            } else {
+                showToast('કેવળ PDF અને Image files સપોર્ટેડ છે!', 'error');
+                hideLoading();
+            }
+        }
+
+        // Process PDF using PDF.js
+        function processPDF(file) {
+            const fileReader = new FileReader();
+            fileReader.onload = function() {
+                const typedarray = new Uint8Array(this.result);
+                
+                pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                    let textContent = '';
+                    const numPages = pdf.numPages;
+                    let pagesProcessed = 0;
+                    
+                    for (let i = 1; i <= numPages; i++) {
+                        pdf.getPage(i).then(function(page) {
+                            page.getTextContent().then(function(content) {
+                                const pageText = content.items.map(item => item.str).join(' ');
+                                textContent += pageText + '\n';
+                                pagesProcessed++;
+                                
+                                updateProgress((pagesProcessed / numPages) * 100);
+                                
+                                if (pagesProcessed === numPages) {
+                                    currentContent = textContent;
+                                    filesProcessed++;
+                                    updateStats();
+                                    hideLoading();
+                                    showToast('PDF સફળતાપૂર્વક લોડ થયું!');
+                                }
+                            });
+                        });
+                    }
+                });
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        // Process Image using Tesseract.js
+        function processImage(file) {
+            Tesseract.recognize(file, 'eng+guj', {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        updateProgress(m.progress * 100);
+                    }
+                }
+            }).then(({ data: { text } }) => {
+                currentContent = text;
+                filesProcessed++;
+                updateStats();
+                hideLoading();
+                showToast('Image માંથી text extract થયું!');
+            }).catch(error => {
+                console.error('OCR Error:', error);
+                hideLoading();
+                showToast('Image process કરવામાં સમસ્યા!', 'error');
+            });
+        }
+
+        // Subject selection
+        function selectSubject(subject) {
+            // Remove previous selection
+            document.querySelectorAll('.subject-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection to clicked card
+            event.target.closest('.subject-card').classList.add('selected');
+            selectedSubject = subject;
+            showToast(`${getSubjectName(subject)} પસંદ કર્યું!`);
+        }
+
+        function getSubjectName(subject) {
+            const subjects = {
+                'mathematics': 'ગણિત',
+                'science': 'વિજ્ઞાન',
+                'history': 'ઇતિહાસ',
+                'geography': 'ભૂગોળ',
+                'english': 'અંગ્રેજી',
+                'gujarati': '
