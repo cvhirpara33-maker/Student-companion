@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>સ્ટુડેન્ટ સાથી - AI નોંધ સરળ કરનાર</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .header { background: #4f46e5; color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2rem; margin-bottom: 10px; }
+        .main-content { padding: 20px; }
+        textarea { width: 100%; height: 120px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; margin: 10px 0; }
+        .button-group { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+        button { padding: 12px 20px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        .simplify-btn { background: #10b981; color: white; }
+        .mcq-btn { background: #f59e0b; color: white; }
+        .output-box { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 15px; min-height: 150px; margin-top: 15px; }
+        .loading { display: none; text-align: center; padding: 15px; color: #4f46e5; }
+        .api-key-section { background: #f1f5f9; padding: 15px; border-radius: 10px; margin: 15px 0; }
+        .api-key-section input { width: 100%; padding: 10px; border: 2px solid #cbd5e1; border-radius: 5px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 સ્ટુડેન્ટ સાથી</h1>
+            <p>AI પાવરથી તમારી નોંધો સરળ બનાવો</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h3>તમારી નોંધો અહીં પેસ્ટ કરો:</h3>
+                <textarea id="notesInput" placeholder="ઉદાહરણ: પ્રકાશ સંશ્લેષણ એ પ્રક્રિયા છે જેમાં છોડ સૂર્યપ્રકાશની ઊર્જાનો ઉપયોગ કરે છે..."></textarea>
+                
+                <div class="button-group">
+                    <button class="simplify-btn" onclick="simplifyNotes()">🎯 નોંધો સરળ કરો</button>
+                    <button class="mcq-btn" onclick="generateMCQs()">❓ MCQ પ્રશ્નો બનાવો</button>
+                </div>
+            </div>
+
+            <div class="api-key-section">
+                <h3>🔑 તમારો OpenAI API Key:</h3>
+                <input type="password" id="apiKey" placeholder="sk-... (https://platform.openai.com/api-keys પરથી મેળવો)">
+            </div>
+
+            <div class="loading" id="loading">
+                <h3>⚡ AI કામ કરી રહ્યું છે...</h3>
+            </div>
+
+            <div class="output-section">
+                <h3>📋 પરિણામ:</h3>
+                <div class="output-box" id="output">
+                    તમારી સરળ નોંધો અથવા MCQ પ્રશ્નો અહીં દેખાશે...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function simplifyNotes() {
+            const notes = document.getElementById('notesInput').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const output = document.getElementById('output');
+            const loading = document.getElementById('loading');
+
+            if (!notes) {
+                output.innerHTML = "❌ કૃપા કરીને પહેલા નોંધો દાખલ કરો!";
+                return;
+            }
+
+            if (!apiKey) {
+                output.innerHTML = "❌ કૃપા કરીને API Key દાખલ કરો!";
+                return;
+            }
+
+            loading.style.display = 'block';
+            output.innerHTML = '';
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "તમે એક અનુભવી શિક્ષક છો જે જટિલ વિષયોને સરળ હિન્દીમાં સમજાવે છે."
+                            },
+                            {
+                                role: "user",
+                                content: `નીચેની ટેક્સ્ટને સરળ હિન્દીમાં સમજાવો:\n\n${notes}`
+                            }
+                        ],
+                        max_tokens: 1000
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    output.innerHTML = `❌ ત્રુટિ: ${data.error.message}`;
+                } else {
+                    output.innerHTML = data.choices[0].message.content;
+                }
+            } catch (error) {
+                output.innerHTML = `❌ નેટવર્ક ત્રુટિ: ${error.message}`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        async function generateMCQs() {
+            const notes = document.getElementById('notesInput').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const output = document.getElementById('output');
+            const loading = document.getElementById('loading');
+
+            if (!notes) {
+                output.innerHTML = "❌ કૃપા કરીને પહેલા નોંધો દાખલ કરો!";
+                return;
+            }
+
+            if (!apiKey) {
+                output.innerHTML = "❌ કૃપા કરીને API Key દાખલ કરો!";
+                return;
+            }
+
+            loading.style.display = 'block';
+            output.innerHTML = '';
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "તમે પરીક્ષા નિષ્ણાત છો જે ઉચ્ચ-ગુણવત્તાના MCQ પ્રશ્નો બનાવે છે."
+                            },
+                            {
+                                role: "user",
+                                content: `નીચેની ટેક્સ્ટમાંથી 3 MCQ પ્રશ્નો બનાવો:\n\n${notes}`
+                            }
+                        ],
+                        max_tokens: 1500
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    output.innerHTML = `❌ ત્રુટિ: ${data.error.message}`;
+                } else {
+                    output.innerHTML = data.choices[0].message.content;
+                }
+            } catch (error) {
+                output.innerHTML = `❌ નેટવર્ક ત્રુટિ: ${error.message}`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
